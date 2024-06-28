@@ -1,0 +1,153 @@
+
+<h1 align=center>
+    <img alt="assertBy" src="icon.jpg">
+</h1>
+
+<p align=center>
+  <b>assertBy</b> is a assertion library for validating data and conditions in tests. It provides various methods to check data types, values, and structures, suitable for various testing scenarios.
+</p>
+
+## Features
+
+- **Simple and Intuitive API**: Makes assertion statements more readable.
+- **Rich Assertion Methods**: Offers various data checking methods, including equality checks, range checks, type checks, and more.
+- **Supports Chaining**: Allows multiple assertions to be chained together to build complex validation logic.
+- **Works with Various Data Types**: Supports checking numbers, strings, arrays, objects, functions, and more.
+
+## OvO ???
+- I have noticed that everyone has their own style of writing tests. You can refer to the code below to see if it suits your needs.
+- If you have any suggestions, feel free to open an issue.
+
+## Installation
+
+Install using npm:
+
+```sh
+npm install assertBy
+```
+
+## Usage
+
+`assertBy` provides a simple and intuitive API to help you write test assertions easily. Here are some common usage examples:
+
+### Asserting Numbers
+
+```javascript
+import { by } from 'assertBy'
+
+let num = 5
+by(num).to.eq(5).and.is.number
+by(num).not.eq(10).and.is.not.bool
+by(num).to.above(3).and.is.not.function
+by(num).to.below(10)
+by(num).to.belowOrEq(6)
+by(num).is.above(3)
+by(num).is.aboveOrEq(4)
+by(num).not.length(5)
+
+by(num).is.within(3, 6)
+by(num).is.not.within(6, 10)
+
+by(5.005).is.approximately(5, 0.01)
+by(5.005).is.not.approximately(5, 0.001)
+```
+
+### Asserting Objects and Arrays
+
+```javascript
+let obj = { a: 1, b: 2 }
+by(obj).to.deepEq({ a: 1, b: 2 }).and.is.object
+
+let arr = [1, 2, 3]
+by(arr).is.array
+by(arr).to.length(3)
+
+by(obj).has.property('a')
+by(obj).has.property('a', 1).and.has.property('b', 2)
+by(obj).has.include({ a: 1 })
+by(obj).has.key('a')
+by(obj).has.keys('a', 'b')
+by(obj).not.has.property('c')
+by(obj).not.has.include({ c: 3 })
+by(obj).not.has.key('c')
+by(obj).not.has.keys('c', 'd')
+```
+
+### Asserting Functions and Errors
+
+```javascript
+by(() => {}).not.throw()
+const fnEx = () => { throw new Error(`i'm error message`) }
+by(fnEx).to.throw(Error)
+by(fnEx).to.throw(`i'm error message`)
+by(fnEx).to.throw(Error, `i'm error message`)
+by(() => {
+    let num = 123
+    by(num).to.eq(456)
+}).is.function
+```
+
+## API Documentation
+
+### `by(value)`
+
+Initialize an assertion chain. `value` is the value to be checked.
+
+### `to`
+
+Further specify assertion conditions.
+
+- **`.eq(expected)`**: Assert `value` is equal to `expected`
+- **`.above(expected)`**: Assert `value` is greater than `expected`
+- **`.aboveOrEq(expected)`**: Assert `value` is greater than or equal to `expected`
+- **`.below(expected)`**: Assert `value` is less than `expected`
+- **`.belowOrEq(expected)`**: Assert `value` is less than or equal to `expected`
+- **`.within(start, end)`**: Assert `value` is between `start` and `end`
+- **`.approximately(expected, delta)`**: Assert `value` is approximately `expected`, allowing for `delta`
+- **`.deepEq(expected)`**: Assert `value` is deeply equal to `expected`
+- **`.throw([type], [message])`**: Assert function `value` throws an error of the specified type or message
+
+### `is`
+
+Check the type or state of `value`.
+
+- **`.number`**: Assert `value` is a number
+- **`.bool`**: Assert `value` is a boolean
+- **`.function`**: Assert `value` is a function
+- **`.string`**: Assert `value` is a string
+- **`.object`**: Assert `value` is an object
+- **`.array`**: Assert `value` is an array
+- **`.symbol`**: Assert `value` is a symbol
+- **`.null`**: Assert `value` is null
+- **`.undefined`**: Assert `value` is undefined
+- **`.nan`**: Assert `value` is NaN
+- **`.true`**: Assert `value` is true
+- **`.false`**: Assert `value` is false
+- **`.instanceOf(constructor)`**: Assert `value` is an instance of the specified constructor
+
+### `has`
+
+Check properties and keys of an object or array.
+
+- **`.property(name, [value])`**: Assert the object `value` has a property with the specified name, optionally equal to `value`
+- **`.include(expected)`**: Assert the object or array `value` includes `expected`
+- **`.key(name)`**: Assert the object `value` has a key with the specified name
+- **`.keys(...names)`**: Assert the object `value` has a set of keys with the specified names
+
+### `not`
+
+Negate the assertion conditions.
+
+- **`.eq(expected)`**: Assert `value` is not equal to `expected`
+- **`.above(expected)`**: Assert `value` is not greater than `expected`
+- **`.aboveOrEq(expected)`**: Assert `value` is not greater than or equal to `expected`
+- **`.below(expected)`**: Assert `value` is not less than `expected`
+- **`.belowOrEq(expected)`**: Assert `value` is not less than or equal to `expected`
+- **`.within(start, end)`**: Assert `value` is not between `start` and `end`
+- **`.approximately(expected, delta)`**: Assert `value` is not approximately `expected`
+- **`.deepEq(expected)`**: Assert `value` is not deeply equal to `expected`
+- **`.throw([type], [message])`**: Assert function `value` does not throw an error of the specified type or message
+
+## License
+
+MIT

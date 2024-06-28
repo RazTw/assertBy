@@ -1,0 +1,22 @@
+{
+	"name": "assertby",
+	"version": "1.0.0",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"test": "jest"
+	},
+	"keywords": [ "test", "assert", "assertion", "testing", "validation" ],
+	"author": "Razgriz Hsu <dev@raz.tw>",
+	"license": "MIT",
+	"description": "A fast assertion library for Js/Ts, Ideal for BDD and TDD.",
+	"repository": { "type": "git", "url": "https://github.com/raztw/assertBy" },
+	"devDependencies": {
+		"@types/jest": "^29.5.12",
+		"@types/node": "^20.14.9",
+		"ts-jest": "^29.1.5",
+		"typescript": "^4.9.5"
+	},
+	"files": [ "dist" ]
+}
