@@ -54,28 +54,42 @@ by(5.005).is.not.approximately(5, 0.001)
 ### Asserting Objects and Arrays
 
 ```javascript
+let arr = [ 1, 2, 3 ]
+by( arr ).to.length( 3 )
+
+
 let obj = { a: 1, b: 2 }
-by(obj).to.deepEq({ a: 1, b: 2 }).and.is.object
+by( obj ).to.deepEq( { a: 1, b: 2 } ).and.is.object
 
-let arr = [1, 2, 3]
-by(arr).to.length(3)
-
-let str = 'hello'
-by(str).to.length(5)
-
-by(obj).has.property('a')
-by(obj).has.property('a', 1).and.has.property('b', 2)
-by(obj).has.include({ a: 1 })
-by(obj).has.key('a')
-by(obj).has.keys(['a', 'b'])
-by(obj).not.has.property('c')
-by(obj).not.has.include({ c: 3 })
-by(obj).not.has.key('c')
-by(obj).not.has.keys(['c', 'd'])
-
-let objc = { a: 1, b: 2, includes() { return true } }
-by(objc).is.object.and.has.include('b')
+by( obj ).has.property( 'a' )
+by( obj ).has.property( 'a', 1 ).and.has.property( 'b', 2 )
+by( obj ).has.include( { a: 1 } )
+by( obj ).has.key( 'a' )
+by( obj ).has.keys( [ 'a', 'b' ] )
+by( obj ).not.has.property( 'c' )
+by( obj ).not.has.include( { c: 3 } )
+by( obj ).not.has.key( 'c' )
+by( obj ).not.has.keys( [ 'c', 'd' ] )
 ```
+
+### Objects deep cases
+
+```javascript
+let obj = { a: 1, b: 2, c: { c1:10, c2:20, c3:{ d:'aa', e:'bb' } } }
+
+by( obj ).has.deep.include( { b:2 } )
+by( obj ).has.deep.include( { c:{ c2:20 } } )
+by( obj ).has.deep.include( { c:{ c3:{ e:'bb' } } } )
+
+by(()=>
+{
+    by( obj ).not.has.deep.include( { c:{ c4:'' } })
+})
+.to.throw( 'to not include key c' )
+
+by( obj ).not.has.deep.include( { z:'' })
+```
+
 
 ### Asserting Functions and Errors
 
@@ -125,8 +139,7 @@ Further specify assertion conditions.
 - **`.bl(expected)`**: Same as `.below(expected)`
 - **`.belowOrEq(expected)`**: Assert `value` is less than or equal to `expected`
 - **`.ble(expected)`**: Same as `.belowOrEq(expected)`
-- **`.within(start, end)`**: Assert `value` is between `start` and `end`
-- **`.withIn(start, end)`**: Same as `.within(start, end)`
+- **`.withIn(start, end)`**: Assert `value` is between `start` and `end`
 - **`.approximately(expected, delta)`**: Assert `value` is approximately `expected`, allowing for `delta`
 - **`.deepEq(expected)`**: Assert `value` is deeply equal to `expected`
 - **`.throw([type], [message])`**: Assert function `value` throws an error of the specified type or message
@@ -158,10 +171,19 @@ Check the type or state of `value`.
 
 Check properties and keys of an object or array.
 
+
 - **`.property(name, [value])`**: Assert the object `value` has a property with the specified name, optionally equal to `value`
 - **`.include(expected)`**: Assert the object or array `value` includes `expected`
 - **`.key(name)`**: Assert the object `value` has a key with the specified name
 - **`.keys(...names)`**: Assert the object `value` has a set of keys with the specified names
+- **`.deep.include(expected)`**: Assert deep inclusion of `expected` in `value`
+
+### `and`
+
+Allows chaining of multiple assertions.
+
+- **`.and`**: Chain multiple assertions
+
 
 ### `not`
 

@@ -3,7 +3,7 @@ type num = number
 type bol = boolean
 
 
-export const debug = false
+export const debug = true
 
 function stringify( obj: any ): str
 {
@@ -73,7 +73,7 @@ export const msgs =
 	function: 'expect {0} to be a function',
 	notThrow: 'expect function to not throw the specified error',
 	instanceOf: 'expect error to be instance of {0}',
-	errorMessage: 'expect error message to be [{0}], but got [{1}]',
+	errorMessage: 'expect error message to has [{0}], but got [{1}]',
 	throwError: 'expect to throw an error from function: {0}',
 	type: 'expect {0} to {1}be a {2}',
 	array: 'expect {0} to {1}be an array',
@@ -87,12 +87,13 @@ export const msgs =
 	instance: 'expect {0} to {1}be instance of {2}',
 	property: 'expect {0} to {1}have property {2}',
 	include: 'expect {0} to {1}include {2}',
+	includeKey: 'expect {0} to {1}include key {2}',
 	key: 'expect {0} to {1}have key {2}',
-	within: `expect {0} to {1}be within {2}..{3}`,
+	withIn: `expect {0} to {1}be within {2}..{3}`,
 	approximately: `expect {0} to {1}be approximately {2} ±{3}`
 }
 
-function fmt( ab:AssertBase, template: str, ...args: any[] ) : str
+export function fmt( ab:AssertBase, template: str, ...args: any[] ) : str
 {
 	const notStr = ab['no'] ? 'not ' : ''
 	return template.replace( /\{(\d+)}/g, ( _match, index ) =>
@@ -105,6 +106,22 @@ function fmt( ab:AssertBase, template: str, ...args: any[] ) : str
 				return notStr
 			default:
 				return args[ Number( index ) - 2 ]
+		}
+	} )
+}
+export function fmtstr( no:boolean, tmpl:str, ...args: any[]  )
+{
+	const notStr = no ? 'not ' : ''
+	return tmpl.replace( /\{(\d+)}/g, ( _match, index ) =>
+	{
+		switch( Number( index ) )
+		{
+			case 0:
+				return `${ inspect( args[0] ) }`
+			case 1:
+				return notStr
+			default:
+				return args[ Number( index ) - 1 ]
 		}
 	} )
 }
@@ -139,22 +156,26 @@ class AssertTo extends AssertBase
 
 	length( n: num, msg?: str )  { return this.chk( this.v.length === n, msg ? msg : fmt( this, msgs.length, n, this.v.length ) ) }
 
-	eq( expect: any, msg?: str ) { return this.equal( expect, msg ) }
 	equal( expect:any, msg?: str ) { return this.chk( this.v === expect, msg ? msg : fmt( this, msgs.equal, expect ) ) }
+	eq( expect: any, msg?: str ) { return this.equal( expect, msg ) }
 
+	// above
 	ab( expect: num, msg?: str ) { return this.above( expect, msg ) }
 	above( expect: num, msg?: str ) { return this.chk( this.v > expect, msg ? msg : fmt( this, msgs.above, expect ) ) }
 
+	// above or equal
 	abe( expect: num, msg?: str ) { return this.aboveOrEq( expect, msg ) }
 	aboveOrEq( expect: num, msg?: str ) { return this.chk( this.v >= expect, msg ? msg : fmt( this, msgs.aboveOrEq, expect ) ) }
 
+	// below
 	bl( expect: num, msg?: str ) { return this.below( expect, msg ) }
 	below( expect: num, msg?: str ) { return this.chk( this.v < expect, msg ? msg : fmt( this, msgs.below, expect ) ) }
 
+	// below or equal
 	ble( expect: num, msg?: str ) { return this.belowOrEq( expect, msg ) }
 	belowOrEq( expect: num, msg?: str ) { return this.chk( this.v <= expect, msg ? msg : fmt( this, msgs.belowOrEq, expect ) ) }
 
-	withIn( start: num, end: num, msg?: str ) { return this.chk( this.v >= start && this.v <= end, msg ? msg : fmt( this, msgs.within, start, end ) ) }
+	withIn( start: num, end: num, msg?: str ) { return this.chk( this.v >= start && this.v <= end, msg ? msg : fmt( this, msgs.withIn, start, end ) ) }
 
 	approximately( expect: num, delta: num, msg?: str ) { return this.chk( Math.abs( this.v - expect ) <= delta, msg ? msg : fmt( this, msgs.approximately, expect, delta ) ) }
 
@@ -230,7 +251,7 @@ class AssertIs extends AssertIsBase
 
 class AssertHas extends AssertBase
 {
-	private checkProp( name: str, condition: bol, value?: any, msg?: str )
+	private hasProp( name: str, condition: bol, value?: any, msg?: str )
 	{
 		this.chk( condition, msg ? msg : fmt( this, msgs.property, name ) )
 		if( value !== undefined ) this.chk( this.v[ name ] === value, msg ? msg : fmt( this, msgs.property, name, value ) )
@@ -238,33 +259,80 @@ class AssertHas extends AssertBase
 		return new AssertEnd( this.v )
 	}
 
-	prop( name: str, value?: any, msg?: str ){ return this.property( name, value, msg ) }
-	property( name: str, value?: any, msg?: str )
-	{
-		return this.checkProp( name, name in this.v, value, msg )
-	}
 
-	incl( expect: any, msg?: str ) { this.include( expect, msg ) }
-	include( expect: any, msg?: str )
-	{
-		if( this.v && typeof this.v.includes === 'function' ) return this.chk( this.v.includes( expect ), msg ? msg : fmt( this, msgs.include, expect ) )
-		else if( typeof this.v === 'object' && this.v !== null )
-		{
-			for( let key in expect )
-			{
-				let ok = this.chk( key in this.v && this.v[ key ] === expect[ key ], msg ? msg : fmt( this, msgs.include, stringify( expect ) ) )
-				if( ok ) return ok
-			}
-		}
-		throw err( `no support the include assertion failed for expect[${ stringify( expect ) }] in type["${ typeof this.v }"] ${ stringify( this.v ) }` )
-	}
+	get deep() { return new AssertHasDeep( this.v, this.no ) }
+
+
+	property( name: str, value?: any, msg?: str ) { return this.hasProp( name, name in this.v, value, msg )}
 
 	key( key: str, msg?: str ) { return this.chk( key in this.v, msg ? msg : fmt( this, msgs.key, key ) ) }
-
 	keys( keys: str[], msg?: str )
 	{
 		keys.forEach( key => this.key( key, msg ) )
 		return new AssertEnd( this.v )
+	}
+
+	include( expect: any, msg?: str )
+	{
+		if( Array.isArray( this.v ) && Array.isArray( expect ) )
+		{
+			this.chk( this.v.length === expect.length, msg ? msg : fmt( this, msgs.length, expect.length, this.v.length ) )
+			expect.forEach( ( value, index ) =>
+			{
+				if( typeof value === 'object' && value !== null )
+					new AssertHas( this.v[index], this.no ).include( value, msg )
+				else
+					this.chk( this.v[index] === value, msg ? msg : fmt( this, msgs.include, stringify( value ) ) )
+			} )
+			return new AssertEnd( this.v )
+		}
+		else if( typeof this.v === 'object' && this.v !== null )
+		{
+			for( let key in expect ) this.chk( key in this.v && this.v[key] === expect[key], msg ? msg : fmt( this, msgs.include, stringify( expect ) ) )
+			return new AssertEnd( this.v )
+		}
+		throw err( `no support the include assertion failed for expect[${stringify( expect )}] in type["${typeof this.v}"] ${stringify( this.v )}` )
+	}
+}
+
+class AssertHasDeep extends AssertBase
+{
+	private checkPropValue( v:any, expect:any, msg?: str )
+	{
+		if( !v ) return
+		for( let key in expect )
+		{
+			let value = expect[key]
+			let hasKey = key in v
+			if( ( this.no && hasKey ) || ( !this.no && !hasKey ) ) throw new Error( fmtstr( this.no, msgs.includeKey, v, key ) )
+
+			if( typeof value === 'object' && value !== null )
+				Array.isArray( value ) ? this.checkArrayValue( v[key], value, msg ) : this.checkPropValue( v[key], value, msg )
+			else
+				this.chk( v[key] === value, msg ? msg : fmt( this, msgs.include, `${key}:${stringify( value )}` ) )
+		}
+	}
+
+	private checkArrayValue( arr:any[], expect:any[], msg?: str )
+	{
+		if( arr.length !== expect.length ) throw new Error( fmt( this, msgs.length, expect.length, arr.length ) )
+		expect.forEach( ( value, index ) =>
+		{
+			typeof value === 'object' && value !== null
+				? this.checkPropValue( arr[index], value, msg )
+				: this.chk( arr[index] === value, msg ? msg : fmt( this, msgs.include, stringify( value ) ) )
+		} )
+	}
+
+	include( expect: any, msg?: str )
+	{
+		if( typeof this.v === 'object' && this.v !== null )
+		{
+			this.checkPropValue( this.v, expect, msg )
+			return new AssertEnd( this.v )
+		}
+
+		throw err( `no support the include assertion failed for expect[${stringify( expect )}] in type["${typeof this.v}"] ${stringify( this.v )}` )
 	}
 }
 
