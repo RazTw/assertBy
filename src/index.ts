@@ -3,7 +3,7 @@ type num = number
 type bol = boolean
 
 
-export const debug = true
+export const debug = 0
 
 function stringify( obj: any ): str
 {
@@ -139,7 +139,7 @@ class AssertBase
 
 	protected chk( cond: bol, msg: str ): AssertEnd
 	{
-		if( this.no ? cond : !cond ) throw err( msg )
+		if( this.no ? cond : !cond ) throw err( fmt( this, msg ) )
 		return new AssertEnd( this.v )
 	}
 }
@@ -234,13 +234,18 @@ class AssertIsBase extends AssertTo
 	get bool() { return this.checkType( 'boolean' ) }
 	get symbol() { return this.checkType( 'symbol' ) }
 	get null() { return this.chk( this.v === null, msgs.null ) }
+	get undef() { return this.undefined }
 	get undefined() { return this.chk( this.v === undefined, msgs.undefined ) }
 	get nullOrUndef() { return this.chk( this.v === null || this.v === undefined, msgs.nullOrUndef ) }
 	get nan() { return this.chk( isNaN( this.v ), msgs.nan ) }
 	get true() { return this.chk( this.v === true, msgs.true ) }
 	get false() { return this.chk( this.v === false, msgs.false ) }
 
-	instanceOf( expect: Function, msg?: str ) { return this.chk( this.v instanceof expect, msg ? msg : fmt( this, msgs.instance, expect.name ) ) }
+	instanceOf( expect: Function, msg?: str )
+	{
+		if( expect == Array || expect.name == 'Array' ) return this.chk( Array.isArray(this.v), msg ? msg : fmt( this, msgs.instance, expect.name ) )
+		return this.chk( this.v instanceof expect, msg ? msg : fmt( this, msgs.instance, expect.name ) )
+	}
 }
 
 class AssertIs extends AssertIsBase
@@ -291,13 +296,17 @@ class AssertHas extends AssertBase
 			for( let key in expect ) this.chk( key in this.v && this.v[key] === expect[key], msg ? msg : fmt( this, msgs.include, stringify( expect ) ) )
 			return new AssertEnd( this.v )
 		}
+		else if ( typeof this.v === 'string' )
+		{
+			return this.chk( this.v.includes( expect ), msg ? msg : fmt( this, msgs.include, stringify( expect ) ) )
+		}
 		throw err( `no support the include assertion failed for expect[${stringify( expect )}] in type["${typeof this.v}"] ${stringify( this.v )}` )
 	}
 }
 
 class AssertHasDeep extends AssertBase
 {
-	private checkPropValue( v:any, expect:any, msg?: str )
+	private checkPropValue( v, expect, msg?: str )
 	{
 		if( !v ) return
 		for( let key in expect )
@@ -313,7 +322,7 @@ class AssertHasDeep extends AssertBase
 		}
 	}
 
-	private checkArrayValue( arr:any[], expect:any[], msg?: str )
+	private checkArrayValue( arr, expect, msg?: str )
 	{
 		if( arr.length !== expect.length ) throw new Error( fmt( this, msgs.length, expect.length, arr.length ) )
 		expect.forEach( ( value, index ) =>
